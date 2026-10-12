@@ -1,37 +1,20 @@
-// API utility — routes to Netlify functions in prod, directly in dev where possible
+// Thin wrappers around the Netlify functions in netlify/functions.
 
-const BASE = import.meta.env.PROD ? '' : ''
-
-export async function searchDatasets({ query, sources, limit = 20 }) {
-  const params = new URLSearchParams({
-    q: query,
-    sources: sources.join(','),
-    limit: String(limit),
-  })
-  const res = await fetch(`${BASE}/.netlify/functions/search?${params}`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Search failed' }))
-    throw new Error(err.error || 'Search failed')
-  }
-  return res.json()
+async function call(name, params, fallbackError) {
+  const res = await fetch(`/.netlify/functions/${name}?${new URLSearchParams(params)}`)
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(body?.error || fallbackError)
+  return body
 }
 
-export async function recommendDatasets({ description, limit = 15 }) {
-  const params = new URLSearchParams({ description, limit: String(limit) })
-  const res = await fetch(`${BASE}/.netlify/functions/recommend?${params}`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Recommendation failed' }))
-    throw new Error(err.error || 'Recommendation failed')
-  }
-  return res.json()
+export function searchDatasets({ query, sources, limit = 20 }) {
+  return call('search', { q: query, sources: sources.join(','), limit: String(limit) }, 'Search failed')
 }
 
-export async function checkQuality({ url }) {
-  const params = new URLSearchParams({ url })
-  const res = await fetch(`${BASE}/.netlify/functions/quality?${params}`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Quality check failed' }))
-    throw new Error(err.error || 'Quality check failed')
-  }
-  return res.json()
+export function recommendDatasets({ description, limit = 15 }) {
+  return call('recommend', { description, limit: String(limit) }, 'Recommendation failed')
+}
+
+export function checkQuality({ url }) {
+  return call('quality', { url }, 'Quality check failed')
 }

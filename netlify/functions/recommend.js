@@ -193,7 +193,7 @@ export const handler = async (event) => {
   await Promise.allSettled([...hfPromises, ...uciPromises])
 
   // Score results by relevance to description
-  const scored = scoreResults(results, description, domains, keywords)
+  const scored = scoreResults(results, domains, keywords)
 
   return {
     statusCode: 200,
@@ -206,8 +206,7 @@ export const handler = async (event) => {
   }
 }
 
-function scoreResults(results, description, domains, keywords) {
-  const descLower = description.toLowerCase()
+function scoreResults(results, domains, keywords) {
   return results
     .map((r) => {
       let score = 0
@@ -230,6 +229,7 @@ function scoreResults(results, description, domains, keywords) {
       return { ...r, _score: score }
     })
     .sort((a, b) => b._score - a._score)
+    // eslint-disable-next-line no-unused-vars
     .map(({ _score, ...r }) => r)
 }
 
